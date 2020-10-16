@@ -1,3 +1,93 @@
+
+# 源码分析
+
+## 文件结构
+
+``` bash
+/Users/liufang/openSource/FunnyLiu/execa
+├── index.d.ts
+├── index.js
+├── index.test-d.ts
+├── lib
+|  ├── command.js
+|  ├── error.js
+|  ├── kill.js
+|  ├── promise.js
+|  ├── stdio.js
+|  └── stream.js
+├── license
+├── media
+|  ├── logo.png
+|  ├── logo.sketch
+|  ├── logo.svg
+|  └── logo@2x.png
+├── package.json
+└── readme.md
+
+directory: 3 file: 49
+
+ignored: directory (1)
+
+```
+
+## 外部模块依赖
+
+![img](./outer.svg)
+
+## 内部模块依赖
+
+![img](./inner.svg)
+  
+
+
+
+# 知识点
+
+## 职责链管理入参
+
+通过职责链逐步加强promise：
+
+[笔记内容](https://github.com/FunnyLiu/execa/blob/readsource/index.js#L102)
+
+``` js
+	// 这里是一个典型的职责链模式
+	// 处理timeout相关的逻辑，
+	const timedPromise = setupTimeout(spawned, parsed.options, spawnedPromise);
+	// 保证清除子进程相关逻辑
+	const processDone = setExitHandler(spawned, parsed.options, timedPromise);
+
+```
+
+## 事件与promise结合
+
+某些api与事件结合封装为promise：
+
+[笔记内容](https://github.com/FunnyLiu/execa/blob/readsource/lib/promise.js#L23)
+
+``` js
+// 将child_process.spawn封装为promise
+// Use promises instead of `child_process` events
+const getSpawnedPromise = spawned => {
+	return new Promise((resolve, reject) => {
+		spawned.on('exit', (exitCode, signal) => {
+			resolve({exitCode, signal});
+		});
+
+		spawned.on('error', error => {
+			reject(error);
+		});
+
+		if (spawned.stdin) {
+			spawned.stdin.on('error', error => {
+				reject(error);
+			});
+		}
+	});
+};
+```
+
+
+
 <img src="media/logo.svg" width="400">
 <br>
 

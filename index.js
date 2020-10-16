@@ -70,17 +70,20 @@ const handleOutput = (options, value, error) => {
 
 	return value;
 };
-
+// 对外暴露的入口函数
 const execa = (file, args, options) => {
 	const parsed = handleArguments(file, args, options);
+	// 拼接命令
 	const command = joinCommand(file, args);
 
 	let spawned;
 	try {
 		spawned = childProcess.spawn(parsed.file, parsed.args, parsed.options);
 	} catch (error) {
+		// 异常捕获
 		// Ensure the returned error is always both a promise and a child process
 		const dummySpawned = new childProcess.ChildProcess();
+		// 创造一个有效的error
 		const errorPromise = Promise.reject(makeError({
 			error,
 			stdout: '',
@@ -96,11 +99,14 @@ const execa = (file, args, options) => {
 	}
 
 	const spawnedPromise = getSpawnedPromise(spawned);
+	// 这里是一个典型的职责链模式
+	// 处理timeout相关的逻辑，
 	const timedPromise = setupTimeout(spawned, parsed.options, spawnedPromise);
+	// 保证清除子进程相关逻辑
 	const processDone = setExitHandler(spawned, parsed.options, timedPromise);
 
 	const context = {isCanceled: false};
-
+    //对应的方法覆盖代理i
 	spawned.kill = spawnedKill.bind(null, spawned.kill.bind(spawned));
 	spawned.cancel = spawnedCancel.bind(null, spawned, context);
 
